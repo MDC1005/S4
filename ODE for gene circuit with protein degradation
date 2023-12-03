@@ -1,0 +1,58 @@
+import numpy as np
+from scipy.integrate import odeint
+import matplotlib.pyplot as plt
+
+def rate_equations(y, t, ka, kd, kc, kf, kbd, kdd, ked,kfd, kx, kxd, X):
+    A, B, C, D, E, F, GFP = y
+    dA_dT = - (ka * A)
+    dB_dT = ((ka * A)+ (ke * E)) - ((kc * B * C) + (kbd * B))
+    dC_dT = (kd * D) - (kc * B * C)
+    dD_dT = (kc * B * C)- ((kd * D) + (kdd * D))
+    dE_dT = (kc * B * C) - ((ke * E) + (ked * E))
+    dF_dT = (kc * B * C) - ((kf * F) + ( kfd * F))
+    dGFP_dT = (kx * X) - ((kf * F) + (kxd * GFP))
+
+    return [dA_dT, dB_dT, dC_dT, dD_dT, dE_dT, dF_dT, dGFP_dT]
+
+initial_conditions = [10, 0, 10, 0, 0, 0, 13.33]  # A, B, C, D, E, F, G, GFP
+t = np.linspace(0, 200, 100)
+ka = 0.5  # pbad promoter strength
+kc = 0.4  # luxR promoter strength
+kd = 0.8  # rate of synthesis of AHL by Plux system
+ke = 1  # assume all of LUXR re-enters system
+kf = 0.9  # GFP reppression strength
+kx = 0.4  # rate of synthesis of GFP by tetr system
+kbd = 0.01 # degradation
+kdd = 0.01 # degradation
+ked = 0.01 # degradation
+kfd = 0.01 # degradation
+kxd = 0.15 # degradation rate of GFP
+X = 5
+
+result = odeint(rate_equations, initial_conditions, t, args=(ka, kd, kc, kf, kbd, kdd, ked,kfd,kx,kxd, X))
+concentrations = np.maximum(result, 0)
+
+A_simulated = concentrations[:, 0]
+B_simulated = concentrations[:, 1]
+C_simulated = concentrations[:, 2]
+D_simulated = concentrations[:, 3]
+E_simulated = concentrations[:, 4]
+F_simulated = concentrations[:, 5]
+GFP_simulated = concentrations[:, 6]
+
+
+plt.plot(t, A_simulated, label='[ARABINOSE]',color='red')
+plt.plot(t, (B_simulated + F_simulated), label='[LuxR]',color='lightsalmon')
+plt.plot(t, C_simulated, label='[AHL]',color='blue')
+plt.plot(t, D_simulated, label='[AHL protein]',color='skyblue')
+plt.plot(t, E_simulated, label='[LuxR (feedback) ]',color='cadetblue',)
+plt.plot(t, F_simulated, label='[TetR ]',color='purple',)
+plt.plot(t, (GFP_simulated), label='[GFP]',color='green',)
+
+
+
+plt.xlabel('Time')
+plt.ylabel('Relative Level')
+plt.legend()
+plt.show()
+
